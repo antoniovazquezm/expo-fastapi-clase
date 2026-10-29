@@ -4,16 +4,17 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.schemas import Categoria, Proyecto, ProyectoIn
+from app.repository import repositorio
 
 
 app = FastAPI(title = "Mini Evaluacion Expo IBERO")
 
 
-
-#TODO: Camibar despues a SQLModel
-proyectos: dict[int, Proyecto] = {}
-siguiente_id = 1
-
+def buscar_proyecto(proyecto_id: int) -> Proyecto:
+    proyecto = repositorio.obtener_proyecto(proyecto_id)
+    if proyecto is None:
+        raise HTTPException(status_code = 404, detail = "Proyecto no encontrado")
+    return proyecto
     
 
 @app.get("/")
@@ -22,25 +23,30 @@ def raiz():
 
 @app.post("/proyectos", response_model=Proyecto, status_code=201)
 def crear_proyecto(datos: ProyectoIn):
-    global siguiente_id
-    proyecto = Proyecto(id=siguiente_id, **datos.model_dump()) #** funciona como un apuntador a lo que está detrás del contenido
-    proyectos[proyecto.id] = proyecto
-    siguiente_id +=1
-    return proyecto
+    return repositorio.crear_proyecto(datos)
 
 @app.get("/proyectos", response_model=list[Proyecto])
 def listar_proyectos(
     categoria: Categoria | None = None,
     limite: Annotated[int, Query(ge=1, le=100)] = 10, 
 ):
-    resultado = [
-        p for p in proyectos.values()
-        if categoria is None or p.categoria == categoria
-    ]
-    return resultado [:limite]
+    return repositorio.listar_proyectos(categoria, limite)
 
 @app.get("/proyetos/{proyecto_id}", response_model=Proyecto)
 def obtener_proyecto(proyecto_id: int):
-    if proyecto_id not in proyectos:
-        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
-    return proyectos[proyecto_id]
+    return buscar_proyecto(proyecto_id)
+
+@app.get("/proyetos/{proyecto_id}/evaluaciones", response_model=Evaluacion, status_code = 201)
+def crear_evaluacion(proyecto_id: int, datos: EvaluacionIn):
+    buscar_proyecto(proyecto_id)
+    return repositorio.crear_evaluacion(proyecto_id, datos)
+
+@app.get("/proyetos/{proyecto_id}/evaluaciones", response_model= list[Evaluacion])
+def listar_evaluaciones(proyecto_id: int):
+    buscar_proyecto(proyecto_id)
+    return repositorio.crear_evaluacion(proyecto_id)
+
+@app.get("/proyectos/{proyecto_id}/resumen", response_model = Resumen)
+def resumen_proyecto(proyecto_id: int):
+    buscar_proyecto(proyecto_id)
+    return repositorio.resumen(proyecto_id)
