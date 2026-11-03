@@ -1,8 +1,8 @@
-from app.schemas import Categoria, Proyecto, ProyectoIn
+from app.schemas import Categoria, Proyecto, ProyectoIn, Evaluacion, EvaluacionIn, Resumen
 
 class RepositoryMemory:
     def __init__(self) -> None:
-        self.proyectos : dict[int, Proyectos] = {}
+        self.proyectos : dict[int, Proyecto] = {}
         self.evaluaciones : dict[int, Evaluacion] = {}
         self.siguiente_id = 1
         self.siguiente_evaluacion_id = 1
@@ -15,8 +15,8 @@ class RepositoryMemory:
         return proyecto
 
     def listar_proyecto(self, categoria: Categoria | None, limite: int) -> list[Proyecto]:
-        resutlado = [
-            p for p in proyectos.values()
+        resultado = [
+            p for p in self.proyectos.values()
             if categoria is None or p.categoria == categoria
         ]
         return resultado [:limite]
@@ -59,6 +59,6 @@ class RepositoryMemory:
             general = round(general, 2)
         )
 
-repositorio = RepositoryMeory()
+repositorio = RepositoryMemory()
 
 
